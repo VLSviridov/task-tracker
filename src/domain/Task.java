@@ -15,17 +15,10 @@ public class Task {
     protected int id; // TODO Можно упаковать в Integer для явного null (иначе 0 "похож" на валидный айдишник)
     protected Status status;
 
-    // TODO просьба дать совет, где принято располагать блок enum в коде (или вынести его в свой класс, или свой пакет)
-    public enum Status {
-        NEW, IN_PROGRESS, DONE
-    }
-
     public Task(String title) {
         this.title = title;
         status = Status.NEW;
     }
-
-    Task() {} // конструктор для наследников
 
     Task(Task task) { // конструктор для клонирования наследников
         this.title = task.title;
@@ -38,6 +31,38 @@ public class Task {
         this.title = title;
         this.description = description;
         this.id = id;
+        this.status = status;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getDescription() {
+        return title;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public void setStatus(Status status){
         this.status = status;
     }
 
@@ -103,29 +128,5 @@ public class Task {
     @Override
     public Task clone() {
         return new Task(this.title, this.description, this.id, this.status);
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public Status getStatus() {
-        return status;
-    }
-
-    public void setStatus(Status status){
-        this.status = status;
     }
 }

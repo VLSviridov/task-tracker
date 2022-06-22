@@ -14,6 +14,10 @@ public class Subtask extends Task {
         super(task);
     }
 
+    public int getEpicId() {
+        return epicId;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -52,9 +56,5 @@ public class Subtask extends Task {
         Subtask aClone = new Subtask(super.clone()); // FYI: без конструктора не получался upcast.
         aClone.epicId = this.epicId;
         return aClone;
-    }
-
-    public int getEpicId() {
-        return epicId;
     }
 }

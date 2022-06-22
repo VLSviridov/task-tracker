@@ -1,12 +1,77 @@
-// 1. Открыт к критике. Спасибо!)
+/*
+Спасибо за ваше ревью и марк-апы! Супер.
 
-// 2. Дополнительные улучшения проекта интересны (наставник говорил, что, как развитие проекта, и для упражнения, можно
-// сделать эпики и сабстаски immutable. Мы будем проходить immutable и mutators далее, или пора погружаться
-// самостоятельно?) Заранее спасибо!
+1. Выполнены обновления по марк-апам:
+    1.1. Manager & Epic: заменил "erase" на "delete".
+    1.2. Manager: реализовал поиск getEpicSubtasksList() по int id (было по Epic epic).
+    1.3. Status (NEW): вынес enum в отдельный класс Status. Код стал гораздо чище, спасибо =)
+    1.4. Task, Subtask, Epic: переместил геттеры и сеттеры выше переопределённых методов.
 
-/* FYI: Чтобы разобраться в роли клонов (и копий объектов) в методах, создал по тесту на каждый метод, где предполагал
-использовать клон или копию объекта. Каждый тест пытается создать баг в случае НЕиспользования копии или клона. Из
-тестов узнал, что стандартные enums - immutable (благодаря чему, в setStatus() и getStatus() невозможно посеять баг).*/
+
+2. Выполнены обновления самостоятельно:
+    2.1. [codestyle] Manager: также переименовал списки "allTasks" в "tasks" (аналогично "epics" и "subtasks").
+    Причина: написание "all" больше усложняло названия методов и читаемость кода, чем несло пользы, как мне кажется.
+    Слово "все" вытекает по смыслу. В названиях полей всегда смотрю на название класса. Поэтому список из "Задач",
+    являющийся полем Менеджера задач, под названием "задачи" - уже довольно очевидно, что это 'ВСЕ' задачи,
+    а не какие-то рандомные задачи.
+    2.2. [codestyle] Manager: убрал излишнюю подпись "...ById()" в методах с параметром "int id" (self-explanitory).
+    2.3. [delete] Main: удалил тесты клонов/копий. (Тесты прогнали, выводы сделал; далее нет необходимости держать их)
+
+
+3. НЕ выполнены обновления по марк-апам. Либо я их неправильно/не полностью понял, либо они ведут к багам, которые
+демонстрирую в тестах в классе Main:
+    3.1. Epic, getSubtaskIds(): "геттер должен возвращать существующее поле - subtaskIds".
+    Комментарий: ЕСЛИ я правильно прочёл, то вы советуете передавать поле subtaskIds через геттер напрямую.
+    Добавил такую реализацию геттера в Epic: getBROKENSubtaskIds().
+    Воспроизвёл баг, который появится в программе с таким геттером, в Main: testCopyInGetSubtaskIds().
+    Нарушается принцип инкапсуляции: изменение поля становится доступно не из сеттера, а откуда угодно.
+        Вывод: если делать такой геттер, то нужно помнить, что у нас заложен баг в программе в данном геттере.
+        Рассчитывать на это - кажется плохой практикой.
+            "+" предлагаемой реализации: сохранение байтов памяти на новый объект и миллисекунд на конструктор.
+            "+" текущей реализации: мы получаем абсолютно идентичный полю список (в моменте). И не получаем баг.
+        Зачем передавать само поле?
+    Возможно я не так понял маркап - в таком случае, просьба раскрыть его, либо скорректировать getBROKENSubtaskIds().
+
+    3.2. Task, Epic, Subtask, Manager: "использование и переопределение clone() излишне."
+    clone() использовался в Manager:
+    - getTask(int),
+    - getEpic(int),
+    - getSubtask(int),
+    - add(Task),
+    - add(Subtask),
+    - add(Epic),
+    - rewrite(Task),
+    - rewrite(Subtask),
+    - rewrite(Epic).
+        А.
+        Если предполагается, что копия объекта __вообще__ не нужна, и мы просто убираем ".clone()" из методов выше,
+        то ситуация аналогична 3.1: заложим баги и вроде как без надобности (возможно я всего не знаю, может программа
+        будет развиваться, и клоны начнут мешать. Значит так тому быть?:)).
+        Тесты, по которым можно воспроизвести баги, в Main:
+        - testCloneInGetTask(Manager),
+        - testCloneInAdd(Manager),
+        - testCloneInRewrite(Manager).
+        Б.
+        Если предполагается __заменить__ метод clone(), то содержание метода будет многократно копировано в методы выше.
+        Например, вместо:
+            public Epic getEpic(int id) {
+                return epics.get(id).clone();
+            }
+        Будет:
+            public Epic getEpic(int id) {
+                Epic thisEpic = epics.get(id);
+                return new Epic(thisEpic.getTitle(), thisEpic.getDescription(), id, thisEpic.getStatus(),
+                thisEpic.getSubtaskIds());
+            }
+        По-моему, это и читается, и воспринимается сложнее! Уход от абстракций. Плюс copy-paste.
+     Возможно этот маркап я тоже неверно понял - в таком случае, просьба раскрыть его.
+
+
+     P.S. Я доступен в Slack, можно созвониться, если так быстрее/удобнее объяснить. Буду рад!
+
+     Спасибо,
+     С уважением, Виктор Свиридов
+*/
 
 import domain.*;
 import manager.*;
@@ -17,26 +82,21 @@ public class Main {
 
     public static void main(String[] args) {
         Manager m = new Manager();
-        testTasks(m); // Тестирование Task по ТЗ - успешно.
+
+        System.out.println("Тестирования по ТЗ:\n");
+        testTasks(m); // Тестирование Task - успешно.
         System.out.println();
-        testEpicsAndSubtasks(m); // Тестирование Epic & Subtask по ТЗ - успешно.
-        System.out.println();
-        // Тестирования клонов:
-        testCloneInSetStatus(); // Клон стандартного enum оказался не нужным.
-        System.out.println();
-        testCloneInGetStatus(); // Клон стандартного enum оказался не нужным.
-        System.out.println();
-        testCloneInGetSubtaskIds(); // Геттер объекта (ArrayList) обязан вернуть новый объект (иначе - баг).
-        System.out.println();
-        testCloneInGetTasksList(m); // Создаёт и возвращает локальный список, поэтому заведомо работает корректно.
-        System.out.println();
-        testCloneInGetTaskById(m); // Геттер объекта (Task) обязан вернуть новый объект (иначе - баг).
-        System.out.println();
-        testCloneInAdd(m); // Клон для аргумента сеттера объекта (Task) - необходим.
-        System.out.println();
-        testCloneInRewrite(m); // Клон для аргумента сеттера объекта (Task) - необходим.
-        System.out.println();
-        testCloneInGetEpicSubtasksList(m); // Создаёт и возвращает локальный список, поэтому работает корректно.
+        testEpicsAndSubtasks(m); // Тестирование Epic & Subtask - успешно.
+        System.out.println("\n\n\n\n\n\n\n\nДемонстрация ошибок при внедрении маркапов (в одной из их интерпретаций):");
+        System.out.println("\n3.1.");
+        testCopyInGetSubtaskIds();
+        System.out.println("\n3.2.");
+        testCloneInGetTask(m);
+        System.out.println('\n');
+        testCloneInAdd(m);
+        System.out.println('\n');
+        testCloneInRewrite(m);
+        System.out.println('\n');
     }
 
     public static void testTasks(Manager m) {
@@ -52,15 +112,15 @@ public class Main {
         for (Task t : m.getTasksList())
             System.out.println(t);
         // 3. Изменить статусы созданных Task.
-        t1.setStatus(Task.Status.IN_PROGRESS); // Локальным оригиналам меняем статус.
-        t2.setStatus(Task.Status.DONE);
+        t1.setStatus(Status.IN_PROGRESS); // Локальным оригиналам меняем статус.
+        t2.setStatus(Status.DONE);
         m.rewrite(t1); // И переписываем копии в менеджере.
         m.rewrite(t2);
         // 4. Проверить, что статусы изменились.
-        System.out.println("Новый статус t1: " + m.getTaskById(t1.getId()).getStatus());
-        System.out.println("Новый статус t2: " + m.getTaskById(t2.getId()).getStatus());
+        System.out.println("Новый статус t1: " + m.getTask(t1.getId()).getStatus());
+        System.out.println("Новый статус t2: " + m.getTask(t2.getId()).getStatus());
         // 5. Удалить один Task
-        m.removeTaskById(t1.getId());
+        m.removeTask(t1.getId());
         for (Task t : m.getTasksList())
             System.out.println(t);
     }
@@ -90,153 +150,108 @@ public class Main {
         for (Subtask s : m.getSubtasksList())
             System.out.println(s);
         // 3А. Изменить статусы созданных Epic (нелегальная операция).
-        e1.setStatus(Epic.Status.DONE); // Локальным эпикам меняем статус.
-        e2.setStatus(Epic.Status.DONE);
+        e1.setStatus(Status.DONE); // Локальным эпикам меняем статус.
+        e2.setStatus(Status.DONE);
         m.rewrite(e1); // И переписываем копии эпиков в менеджере.
         m.rewrite(e2);
         // 4А. Проверить, что статусы НЕ изменились (нелегальная операция).
         System.out.println("Новый статус e1 (после попытки изменить произвольно): " +
-                m.getEpicById(e1.getId()).getStatus());
+                m.getEpic(e1.getId()).getStatus());
         System.out.println("Новый статус e2 (после попытки изменить произвольно): " +
-                m.getEpicById(e2.getId()).getStatus());
+                m.getEpic(e2.getId()).getStatus());
         // 3Б. Изменить статусы созданных Subtask
-        s1.setStatus(Subtask.Status.IN_PROGRESS); // Локальным сабтаскам меняем статус.
-        s2.setStatus(Subtask.Status.DONE);
+        s1.setStatus(Status.IN_PROGRESS); // Локальным сабтаскам меняем статус.
+        s2.setStatus(Status.DONE);
         m.rewrite(s1); // И переписываем копии сабтасков в менеджере.
         m.rewrite(s2);
         // 4Б. Проверить, что статусы Subtask изменились, а статус Epic рассчитался по статусам подзадач.
-        System.out.println("Новый статус e1: " + m.getEpicById(e1.getId()).getStatus());
-        System.out.println("Новый статус s1: " + m.getSubtaskById(s1.getId()).getStatus());
-        System.out.println("Новый статус s2: " + m.getSubtaskById(s2.getId()).getStatus());
+        System.out.println("Новый статус e1: " + m.getEpic(e1.getId()).getStatus());
+        System.out.println("Новый статус s1: " + m.getSubtask(s1.getId()).getStatus());
+        System.out.println("Новый статус s2: " + m.getSubtask(s2.getId()).getStatus());
         // 5. Удалить один Epic
-        m.removeEpicById(e2.getId());
+        m.removeEpic(e2.getId());
         for (Epic e : m.getEpicsList())
             System.out.println(e);
     }
 
-    // Ниже - тестирование клонов.
-    // Проверяю, что будет, если не использовать клон или копию в определённом методе: сею баг в программу.
-    // 1. Методы класса Task (и наследников):
-    public static void testCloneInSetStatus() {
-        Task t = new Task("Новая задача");
-        Task.Status x = Task.Status.IN_PROGRESS;
-
-        t.setStatus(x); // IN_PROGRESS установлен
-        x = Task.Status.DONE; // Пытаюсь посеять баг: изменить статус t без сеттера.
-        System.out.println("IN_PROGRESS = " + t.getStatus()); // Работает корректно без клона.
-    }
-
-    public static void testCloneInGetStatus() {
-        Task t = new Task("Новая задача");
-
-        t.setStatus(Task.Status.IN_PROGRESS); // Работает корректно без клона.
-
-        Task.Status bug = t.getStatus();
-        bug = Task.Status.DONE; // Пытаюсь посеять баг
-        System.out.println("IN_PROGRESS = " + t.getStatus());
-    }
-
-    // 2. Методы класса Epic:
-    public static void testCloneInGetSubtaskIds() {
-        Epic e = new Epic("Новая задача");
+    // Ниже - демонстрация ошибки при возврате геттером объекта-поля:
+    public static void testCopyInGetSubtaskIds() {
+        Epic e = new Epic("");
 
         e.addSubtaskId(5);
-        // TODO тест завязан на id предыдущих тестов. Не стал развязывать - полагаю удалить тест в следующей итерации.
-        e.addSubtaskId(6);
+        // TODO тест завязан на id предыдущих тестов. Не стал "отвязывать" - полагаю удалить тест в следующих итерациях.
+        e.addSubtaskId(6); // Привязали Новый эпик к id сабтасков 5 и 6.
 
-        ArrayList<Integer> bug = e.getSubtaskIds(); // Работает корректно только с возвратом новой копии.
+        ArrayList<Integer> noBug = e.getSubtaskIds();
+        noBug.add(10); // Пытаемся сеять баг.
+        System.out.println("Возврат копии объекта в геттере - отлично, баг никак не внести. " +
+                "[5, 6] = " + e.getSubtaskIds()); // Напечатает... [5, 6] = [5, 6]
+        // Вывод: геттер работает корректно при возврате копии поля-объекта.
+
+        ArrayList<Integer> bug = e.getBROKENSubtaskIds();
         bug.add(10); // Сеем баг
-        System.out.println("[5, 6] = " + e.getSubtaskIds());
-        // Код метода без возврата копии (для создания бага) - ниже.
-        /* return subtaskIds;*/
-        // Напечатает: [5, 6] = [5, 6, 10]
+        System.out.println("Возврат объекта в геттере - нарушена инкапсуляция. Баг внесён успешно. " +
+                "[5, 6] = " + e.getBROKENSubtaskIds()); // Напечатает: ... [5, 6] = [5, 6, 10]
+        // Вывод: геттер нарушил принцип инкапсуляции при возврате поля-объекта.
+        // Доступ к полю появился в обход сеттера, и возможно вообще случайно.
     }
 
-    // 3. Методы класса Manager:
-    public static void testCloneInGetTasksList(Manager m) { //getEpicsList() и getSubtasksList() аналогично.
-        ArrayList<Task> localTaskList = m.getTasksList(); // Создаёт и возвращает новый лист,поэтому работает корректно.
-        Task bug = new Task("Баг");
+    public static void testCloneInGetTask(Manager m) { //getEpic(int) и getSubtask(int) аналогично.
+        Task noBug = m.getTask(2);                     // TODO тест завязан аналогично TODO выше
 
-        localTaskList.add(bug); // Сеем баг.
-        for (Task t : m.getTasksList())
-            System.out.println(t); // Лишних тасков не добавлено.
-    }
+        noBug.setTitle("Клон не даст подступиться к филдам оригинального объекта");
+        System.out.println(m.getTask(2).getTitle()); // Работает корректно с клоном: название объекта в менеджере не изменено.
 
-    public static void testCloneInGetTaskById(Manager m) { //getEpicById(int) и getSubtaskById(int) аналогично.
-        Task x = m.getTaskById(2); // Работает корректно только с клоном.  // TODO тест завязан аналогично TODO выше
+        Task bug = m.getBROKENTask(2);
 
-        x.setTitle("БАГ!!!");
-        System.out.println(m.getTaskById(2));
-        // Код метода без возврата копии (для создания бага) - ниже.
-        /* return allTasks.get(id);*/
-        // Напечатает: Task{title='БАГ!!!', description=null, id=2, status=DONE}
+        bug.setTitle("Без клона можем внести изменения в поля объекта в обход сеттеров");
+        System.out.println(m.getBROKENTask(2).getTitle()); // Изменили название в строке выше, без сеттера.
     }
 
     public static void testCloneInAdd(Manager m) {
-        Task t = new Task("Новая задача для add");
+        Task noBug = new Task("Новая задача для add");
 
-        m.add(t); // Работает корректно только с клоном.
+        m.add(noBug);
+        int id1 = m.getCurrentId();
 
-        int id = m.getCurrentId();
+        noBug.setTitle("Клон не даст подступиться к филдам оригинального объекта");
+        System.out.println(m.getTask(id1).getTitle()); // Работает корректно с клоном: название объекта в менеджере не изменено.
 
-        t.setTitle("Баг");
-        System.out.println(m.getTaskById(id));
-        // Код метода без возврата копии (для создания бага) - ниже.
-        /* newTask.setId(++currentId);
-        allTasks.put(newTask.getId(), newTask);*/
-        // Напечатает: Task{title='Баг', description=null, id=7, status=NEW}
+        Task bug = new Task("Новая задача для add");
+
+        m.addBROKEN(bug);
+
+        int id2 = m.getCurrentId();
+
+        bug.setTitle("Без клона можем внести изменения в поля объекта в обход сеттеров");
+        System.out.println(m.getTask(id2).getTitle()); // Изменили название в строке выше, без сеттера.
     }
 
     public static void testCloneInRewrite(Manager m) {
-        Task t = new Task("Новая задача для rewrite");
+        Task noBug = new Task("Новая задача для rewrite");
 
-        m.add(t);
+        m.add(noBug);
 
-        int id = m.getCurrentId();
+        int id1 = m.getCurrentId();
 
-        t.setId(id); // Привязать id к локальной копии для легального rewrite.
+        noBug.setId(id1); // Привязать id к локальной копии для легального rewrite.
 
-        t.setTitle("Легальный rewrite через Manager");
-        m.rewrite(t); // Работает корректно только с клоном.
-        System.out.println(m.getTaskById(id));
+        noBug.setTitle("Легальный rewrite через Manager");
+        m.rewrite(noBug); // Работает корректно только с клоном.
+        noBug.setTitle("Клон не даст подступиться к филдам оригинального объекта");
+        System.out.println(m.getTask(id1).getTitle());
 
-        t.setTitle("Rewrite задней пяткой");
-        System.out.println(m.getTaskById(id));
-        // Код метода без возврата копии (для создания бага) - ниже.
-        /* allTasks.put(updatedTask.getId(), updatedTask);*/
-        // Напечатает:
-        //  Task{title='Легальный rewrite через Manager', description=null, id=8, status=NEW}
-        //  Task{title='Rewrite задней пяткой', description=null, id=8, status=NEW}
-    }
+        Task bug = new Task("Новая задача для rewrite");
 
-    public static void testCloneInGetEpicSubtasksList(Manager m) {
-        // Добавление тасков аналогично testEpicsAndSubtasks(Manager).
-        Epic e1 = new Epic("Новый эпик");
+        m.add(bug);
 
-        m.add(e1);
+        int id2 = m.getCurrentId();
 
-        int id = m.getCurrentId();
-        e1.setId(id);
+        bug.setId(id2); // Привязать id к локальной копии для легального rewrite.
 
-        Subtask s1 = new Subtask("Новый сабстаск - 1", id);
-        Subtask s2 = new Subtask("Новый сабстаск - 2", id);
-
-        m.add(s1);
-        s1.setId(m.getCurrentId());
-        m.add(s2);
-        s2.setId(m.getCurrentId());
-
-        System.out.println("Было:");
-        for (Subtask s : m.getEpicSubtasksList(m.getEpicById(id)))
-            System.out.println(s);
-
-        ArrayList<Subtask> corruptList = m.getEpicSubtasksList(m.getEpicById(id));  // Создаёт и возвращает новый лист,
-                                                                                    // поэтому работает корректно.
-        Subtask bug = new Subtask("Баг", id);
-
-        corruptList.add(bug);
-        System.out.println("Стало:");
-        for (Subtask s : m.getEpicSubtasksList(m.getEpicById(id)))
-            System.out.println(s);
+        bug.setTitle("Легальный rewrite через Manager");
+        m.rewriteBROKEN(bug); // Работает корректно только с клоном.
+        bug.setTitle("Без клона можем внести изменения в поля объекта в обход сеттеров");
+        System.out.println(m.getTask(id2).getTitle());
     }
 }

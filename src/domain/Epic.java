@@ -14,6 +14,26 @@ public class Epic extends Task {
         super(task);
     }
 
+    public ArrayList<Integer> getSubtaskIds() { // геттер поля, которое является объектом - возвращает новый объект.
+        return new ArrayList<>(subtaskIds);
+    }
+
+    public ArrayList<Integer> getBROKENSubtaskIds() { // TODO УДАЛИТЬ. Создан для демонстрации.
+        return subtaskIds;
+    }
+
+    public void addSubtaskId(int id) {
+        subtaskIds.add(id);
+    }
+
+    public void removeSubtaskId(int id) {
+        subtaskIds.remove(id);
+    }
+
+    public void deleteSubtaskIds() {
+        subtaskIds.clear();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -55,21 +75,5 @@ public class Epic extends Task {
         Epic aClone = new Epic(super.clone());// FYI: без конструктора не получился upcast //... = (Epic) super.clone();
         aClone.subtaskIds = this.subtaskIds;
         return aClone;
-    }
-
-    public ArrayList<Integer> getSubtaskIds() { // геттер поля, которое является объектом - возвращает новый объект.
-        return new ArrayList<>(subtaskIds);
-    }
-
-    public void addSubtaskId(int id) {
-        subtaskIds.add(id);
-    }
-
-    public void removeSubtaskId(int id) {
-        subtaskIds.remove(id);
-    }
-
-    public void eraseSubtaskIds() {
-        subtaskIds.clear();
     }
 }
