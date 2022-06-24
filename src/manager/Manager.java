@@ -87,6 +87,11 @@ public class Manager {
     }
 
     public void add(Subtask newSubtask) {
+        if (epics.get(newSubtask.getEpicId()) == null) {
+            System.out.println("Ошибка: привязанного эпика не существует. Сабтаск не был добавлен.");
+            return;
+        }
+
         Subtask aClone = newSubtask.clone();
 
         aClone.setId(++currentId);
