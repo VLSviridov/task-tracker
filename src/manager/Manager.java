@@ -53,7 +53,7 @@ public class Manager {
         tasks.put(newTask.getId(), newTask);
     }
 
-    public void rewriteBROKEN(Task updatedTask) {
+    public void updateBROKEN(Task updatedTask) {
         tasks.put(updatedTask.getId(), updatedTask);
     }
 
@@ -96,17 +96,17 @@ public class Manager {
     }
 
     // ТЗ 2.5. Обновить задачу:
-    public void rewrite(Task updatedTask) {
+    public void update(Task updatedTask) {
         Task aClone = updatedTask.clone();
         tasks.put(aClone.getId(), aClone);
     }
 
-    public void rewrite(Epic updatedEpic) {
+    public void update(Epic updatedEpic) {
         Epic aClone = updatedEpic.clone();
         epics.put(aClone.getId(), aClone);
     }
 
-    public void rewrite(Subtask updatedSubtask) {
+    public void update(Subtask updatedSubtask) {
         Subtask aClone = updatedSubtask.clone();
 
         subtasks.put(aClone.getId(), aClone);
@@ -114,18 +114,18 @@ public class Manager {
     }
 
     // ТЗ 2.6. Удалить по идентификатору:
-    public void removeTask(int id) {
+    public void deleteTask(int id) {
         tasks.remove(id);
     }
 
-    public void removeEpic(int id) {
+    public void deleteEpic(int id) {
         for (Integer subId : getEpic(id).getSubtaskIds()) {
-            removeSubtask(subId);
+            deleteSubtask(subId);
         }
         epics.remove(id);
     }
 
-    public void removeSubtask(int id) {
+    public void deleteSubtask(int id) {
         int epicId = getSubtask(id).getEpicId();
         subtasks.remove(id);
         getEpic(epicId).removeSubtaskId(id);   // Убрать идентификатор из Epic.
@@ -151,21 +151,31 @@ public class Manager {
     private void recalculateEpicStatus(int id) {
         if (epics.get(id).getSubtaskIds() == null || epics.get(id).getSubtaskIds().size() == 0) {
             epics.get(id).setStatus(Status.NEW);
+        } else if (areEpicSubtaskStatusesIdentical(id)) {
+            Status first = getSubtask(epics.get(id).getSubtaskIds().get(0)).getStatus(); //Статус первого сабтаска эпика
+            epics.get(id).setStatus(first);
         } else {
-            ArrayList<Subtask> subtasks = getEpicSubtasksList(id);
-            ArrayList<Status> subtaskStatuses = new ArrayList<>();
+            epics.get(id).setStatus(Status.IN_PROGRESS);
+        }
+    }
 
-            for (Subtask s : subtasks)
-                subtaskStatuses.add(s.getStatus());
-            if (subtaskStatuses.contains(Status.IN_PROGRESS)
-                    || subtaskStatuses.contains(Status.NEW)
-                    && subtaskStatuses.contains(Status.DONE)) {
-                epics.get(id).setStatus(Status.IN_PROGRESS);
-            } else if (subtaskStatuses.contains(Status.NEW)) {
-                epics.get(id).setStatus(Status.NEW);
+    private boolean areEpicSubtaskStatusesIdentical(int id) {
+        boolean areIdentical = true;
+        Status first = null;
+        int index = -1;
+
+        for (int subtaskId : epics.get(id).getSubtaskIds()) { // Итерирование по сабтаскам один раз до первого
+            // несовпадения, без формирования полного списка сабтасков
+            index++;
+            if (index == 0) {
+                first = subtasks.get(subtaskId).getStatus(); // Эталонный статус
             } else {
-                epics.get(id).setStatus(Status.DONE);
+                if (!subtasks.get(subtaskId).getStatus().equals(first)) {
+                    areIdentical = false;
+                    break;
+                }
             }
         }
+        return areIdentical;
     }
 }

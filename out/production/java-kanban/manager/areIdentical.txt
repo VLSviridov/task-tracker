@@ -1,0 +1,32 @@
+    private boolean areEpicSubtaskStatusesIdentical(int id) {
+        boolean areIdentical = true;
+        Status first = null;
+        int index = -1;
+
+        for (int subtaskId : epics.get(id).getSubtaskIds()) { // Проход по сабтаскам один раз до первого несовпадения,
+                                                              // без формирования полного списка.
+            index++;
+            if (index == 0) {
+                first = subtasks.get(subtaskId).getStatus(); // Эталонный статус
+            } else {
+                if (!subtasks.get(subtaskId).getStatus().equals(first)) {
+                    areIdentical = false;
+                    break;
+                }
+            }
+
+        }
+
+        for (Subtask s : getEpicSubtasksList(id)) { // Проход по списку один раз до первого несовпадения.
+            index++;
+            if (index == 0) {
+                first = s.getStatus(); // Эталонный статус
+            } else {
+                if (!s.getStatus().equals(first)) {
+                    areIdentical = false;
+                    break;
+                }
+            }
+        }
+        return areIdentical;
+    }
